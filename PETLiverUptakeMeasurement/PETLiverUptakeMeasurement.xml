@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>Quantification</category>
+  <title>PET Liver Uptake Measurement</title>
+  <description><![CDATA[Measurement of uptake in a liver reference region in an SUV normalized FDG-18 whole-body PET scan.]]></description>
+  <version>0.0.1</version>
+  <documentation-url>https://www.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/PETLiverUptakeMeasurement</documentation-url>
+  <license>Slicer</license>
+  <contributor>Christian Bauer (University of Iowa), Markus van Tol (University of Iowa)</contributor>
+  <acknowledgements>This work was partially funded by NIH grants U01-CA140206 and U24-CA180918.</acknowledgements>
+  <parameters>
+    <label>IO Parameters</label>
+    <description><![CDATA[Input/output parameters]]></description>
+    <image>
+      <name>inputVolume</name>
+      <label>Input Volume</label>
+      <channel>input</channel>
+      <index>0</index>
+      <description><![CDATA[Input PET volume]]></description>
+    </image>
+    <image type="label">
+      <name>outputVolume</name>
+      <label>Output Volume</label>
+      <longflag>--outputVolume</longflag>
+      <channel>output</channel>
+      <description><![CDATA[Output Liver Reference RegionVolume]]></description>
+    </image>
+    <region multiple="false">
+        <name>region</name>
+        <label>Region</label>
+        <longflag>region</longflag>
+        <description><![CDATA[Search Region]]></description>
+    </region>
+    <double>
+        <name>lowerThreshold</name>
+        <longflag>--lowerThreshold</longflag>
+        <description><![CDATA[Lower thresholding value]]></description>
+        <label>Lower Threshold</label>
+        <default>1.0</default>
+        <constraints>
+            <minimum>0</minimum>
+            <maximum>20</maximum>
+            <step>0.1</step>
+        </constraints>
+    </double>
+    <double>
+        <name>upperThreshold</name>
+        <longflag>--upperThreshold</longflag>
+        <description><![CDATA[Upper thresholding value]]></description>
+        <label>Upper Threshold</label>
+        <default>10.0</default>
+        <constraints>
+            <minimum>0</minimum>
+            <maximum>20</maximum>
+            <step>0.1</step>
+        </constraints>
+    </double>
+    <double>
+        <name>erosion</name>
+        <longflag>--erosion</longflag>
+        <description><![CDATA[Distance for erosion]]></description>
+        <label>Erosion Distance</label>
+        <default>3.0</default>
+        <constraints>
+            <minimum>0</minimum>
+            <maximum>20</maximum>
+            <step>1</step>
+        </constraints>
+    </double>
+  </parameters>
+  <parameters>
+    <label>Measurements</label>
+    <description><![CDATA[Reference region measurements]]></description>
+    <string>
+      <name>Mean_s</name>
+      <label>Mean</label>
+      <channel>output</channel>
+      <description><![CDATA[Mean value in reference region]]></description>
+    </string>
+    <string>
+      <name>Std_s</name>
+      <label>Standard Deviation</label>
+      <channel>output</channel>
+      <description><![CDATA[Standard deviation in reference region]]></description>
+    </string>
+    <string>
+      <name>Median_s</name>
+      <label>Median</label>
+      <channel>output</channel>
+      <description><![CDATA[Median value in reference region]]></description>
+    </string>
+  </parameters>
+</executable>
