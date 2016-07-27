@@ -102,9 +102,9 @@ ROIType convertToROI(std::vector<float> region, InputImageType::Pointer img)
         InputImageType::IndexType idxB;
         img->TransformPhysicalPointToIndex(pointB,idxB);
         InputImageType::SizeType ROISize;
-        ROISize[0] = abs(idxA[0]-idxB[0])+1;
-        ROISize[1] = abs(idxA[1]-idxB[1])+1;
-        ROISize[2] = abs(idxA[2]-idxB[2])+1;
+        ROISize[0] = std::abs(idxA[0]-idxB[0])+1;
+        ROISize[1] = std::abs(idxA[1]-idxB[1])+1;
+        ROISize[2] = std::abs(idxA[2]-idxB[2])+1;
         InputImageType::IndexType ROIStart;
         ROIStart[0] = std::min(idxA[0], idxB[0]);
         ROIStart[1] = std::min(idxA[1], idxB[1]);
