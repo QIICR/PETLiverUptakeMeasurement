@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <executable>
-  <category>Quantification</category>
-  <title>PET Liver Uptake Measurement</title>
+  <category>Legacy</category>
+  <title>PET Liver Uptake Measurement CLI</title>
   <description><![CDATA[Measurement of uptake in a liver reference region in an SUV normalized FDG-18 whole-body PET scan.]]></description>
-  <version>0.0.1</version>
-  <documentation-url>https://www.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/PETLiverUptakeMeasurement</documentation-url>
+  <version>1.0.0</version>
+  <documentation-url>https://www.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/PETLiverUptakeMeasurementCLI</documentation-url>
   <license>Slicer</license>
   <contributor>Christian Bauer (University of Iowa), Markus van Tol (University of Iowa)</contributor>
   <acknowledgements>This work was partially funded by NIH grants U01-CA140206 and U24-CA180918.</acknowledgements>
@@ -23,7 +23,7 @@
       <label>Output Volume</label>
       <longflag>--outputVolume</longflag>
       <channel>output</channel>
-      <description><![CDATA[Output Liver Reference RegionVolume]]></description>
+      <description><![CDATA[Output Liver Reference Region]]></description>
     </image>
     <region multiple="false">
         <name>region</name>
