@@ -361,7 +361,9 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
     try:
       import shutil
       logging.debug("Cleaning up temporarily created directory {}".format(self.tempDir))
+      logging.debug("Cleaning up temporarily created dicom image directory {}".format(self.tempDicomDir))
       shutil.rmtree(self.tempDir)
+      shutil.rmtree(self.tempDicomDir)
       self.tempDir = None
       self.tempDicomDir = None
     except AttributeError:
