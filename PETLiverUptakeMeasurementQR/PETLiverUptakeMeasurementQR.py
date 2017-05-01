@@ -21,7 +21,7 @@ class PETLiverUptakeMeasurementQR(ScriptedLoadableModule):
     ScriptedLoadableModule.__init__(self, parent)
     self.parent.title = "PET Liver Uptake Measurement"
     self.parent.categories = ["Quantification"]
-    self.parent.dependencies = []
+    self.parent.dependencies = ["DCMQI"]
     self.parent.contributors = ["Christian Bauer (Univeristy of Iowa)"]
     self.parent.helpText = """
     Measurement of uptake in a liver reference region in an SUVbw normalized FDG-18 whole-body PET scan with export to DICOM. \
