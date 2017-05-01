@@ -6,6 +6,7 @@ import logging
 import getpass
 from datetime import datetime
 import json
+import shutil
 
 #
 # PETLiverUptakeMeasurementQR
@@ -279,16 +280,20 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
     self.currentDateTime = datetime.now().strftime('%Y-%m-%d_%H%M%S')
     self.tempDir = os.path.join(self.slicerTempDir, self.currentDateTime)
     os.mkdir(self.tempDir)
-
+    
+    self.tempDicomDir = os.path.join(self.slicerTempDir, self.currentDateTime+'_dicoms')
+    os.mkdir(self.tempDicomDir)
+    for dicomFile in self.getDICOMFileList(self.inputSelector.currentNode(), absolutePaths=True):
+      shutil.copy(dicomFile, self.tempDicomDir)    
+    
     segmentFiles = []
     slicer.util.saveNode(self.segmentationSelector.currentNode(), os.path.join(self.tempDir, "seg.nrrd")), 
-    segmentFiles.append(os.path.join(self.tempDir, "seg.nrrd"))
+    segmentFiles.append(os.path.join(self.tempDir, "seg.nrrd"))       
 
     metaFilePath = self.saveJSON(data, os.path.join(self.tempDir, "seg_meta.json"))
     outputSegmentationPath = os.path.join(self.tempDir, "seg.dcm")
 
-    params = {"dicomImageFiles": ', '.join(self.getDICOMFileList(self.inputSelector.currentNode(),
-                                                                 absolutePaths=True)).replace(', ', ","),
+    params = {"dicomDirectory": self.tempDicomDir,
               "segImageFiles": ', '.join(segmentFiles).replace(', ', ","),
               "metaDataFileName": metaFilePath,
               "outputSEGFileName": outputSegmentationPath}
@@ -331,7 +336,7 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
 
     params = {"metaDataFileName": metaFilePath,
               "compositeContextDataDir": compositeContextDataDir,
-              "imageLibraryDataDir": imageLibraryDataDir,
+              "imageLibraryDataDir": self.tempDicomDir,#imageLibraryDataDir,
               "outputFileName": outputSRPath}
 
     logging.debug(params)
@@ -348,7 +353,8 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
   # from https://github.com/QIICR/QuantitativeReporting/blob/master/Py/QuantitativeReporting.py
   def addProducedDataToDICOMDatabase(self):
     indexer = ctk.ctkDICOMIndexer()
-    indexer.addDirectory(slicer.dicomDatabase, self.tempDir, "copy")  # TODO: doesn't really expect a destination dir
+    indexer.addFile(slicer.dicomDatabase, os.path.join(self.tempDir,'seg.dcm'), "copy")  # Note: doesn't really expect a destination dir
+    indexer.addFile(slicer.dicomDatabase, os.path.join(self.tempDir,'sr.dcm'), "copy")  # Note: doesn't really expect a destination dir
 
   # from https://github.com/QIICR/QuantitativeReporting/blob/master/Py/QuantitativeReporting.py
   def cleanupTemporaryData(self):
@@ -357,6 +363,7 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
       logging.debug("Cleaning up temporarily created directory {}".format(self.tempDir))
       shutil.rmtree(self.tempDir)
       self.tempDir = None
+      self.tempDicomDir = None
     except AttributeError:
       pass
   
@@ -421,7 +428,6 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
 
   # from https://github.com/QIICR/QuantitativeReporting/blob/master/Py/QuantitativeReporting.py
   def getDICOMFileList(self, volumeNode, absolutePaths=False):
-    # TODO: move to general class
     attributeName = "DICOM.instanceUIDs"
     instanceUIDs = volumeNode.GetAttribute(attributeName)
     if not instanceUIDs:
