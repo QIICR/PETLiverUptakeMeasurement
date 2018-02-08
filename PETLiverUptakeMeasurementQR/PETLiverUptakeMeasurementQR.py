@@ -21,8 +21,8 @@ class PETLiverUptakeMeasurementQR(ScriptedLoadableModule):
     ScriptedLoadableModule.__init__(self, parent)
     self.parent.title = "PET Liver Uptake Measurement"
     self.parent.categories = ["Quantification"]
-    self.parent.dependencies = ["DCMQI"]
-    self.parent.contributors = ["Christian Bauer (Univeristy of Iowa)"]
+    self.parent.dependencies = []
+    self.parent.contributors = ["Christian Bauer (University of Iowa)"]
     self.parent.helpText = """
     Measurement of uptake in a liver reference region in an SUVbw normalized FDG-18 whole-body PET scan with export to DICOM. \
     <a href="https://www.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/PETLiverUptakeMeasurement">Documentation.</a>
@@ -64,7 +64,7 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
     self.inputSelector = slicer.qMRMLNodeComboBox()
     self.inputSelector.nodeTypes = ["vtkMRMLScalarVolumeNode"]
     self.inputSelector.addAttribute("vtkMRMLScalarVolumeNode", "DICOM.instanceUIDs", None)
-    self.inputSelector.addAttribute("vtkMRMLScalarVolumeNode", "DICOM.MeasurementUnitsCodeValue", "{SUVbw}g/ml") # ensures that the input is a SUV normalized PET scan
+    #self.inputSelector.addAttribute("vtkMRMLScalarVolumeNode", "DICOM.MeasurementUnitsCodeValue", "{SUVbw}g/ml") # ensures that the input is a SUV normalized PET scan
     self.inputSelector.selectNodeUponCreation = True
     self.inputSelector.addEnabled = False
     self.inputSelector.removeEnabled = False
@@ -372,7 +372,10 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
   # from https://github.com/QIICR/QuantitativeReporting/blob/master/Py/QuantitativeReporting.py
   def _getSeriesAttributes(self):
     attributes = dict()
-    sourceFileName = self.inputSelector.currentNode().GetStorageNode().GetFileName()
+    if self.inputSelector.currentNode().GetStorageNode():
+      sourceFileName = self.inputSelector.currentNode().GetStorageNode().GetFileName()
+    else:
+      sourceFileName = slicer.dicomDatabase.fileForInstance(self.inputSelector.currentNode().GetAttribute("DICOM.instanceUIDs").split(" ")[0])
     DICOMTAGS_SERIES_NUMBER = '0020,0011'
     self.seriesNumber = self._getDICOMValue(sourceFileName, DICOMTAGS_SERIES_NUMBER)
     try: 
@@ -478,8 +481,11 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
   # based on: https://github.com/QIICR/QuantitativeReporting/blob/master/Py/QuantitativeReporting.py#L999
   def generateJSON4DcmSR(self, dcmSegmentationFile, sourceVolumeNode):
     measurements = []
-
-    sourceImageSeriesUID = self._getDICOMValue(sourceVolumeNode.GetStorageNode().GetFileName(), '0020,000E')
+    if sourceVolumeNode.GetStorageNode():
+      sourceFileName = sourceVolumeNode.GetStorageNode().GetFileName()
+    else:
+      sourceFileName = slicer.dicomDatabase.fileForInstance(sourceVolumeNode.GetAttribute("DICOM.instanceUIDs").split(" ")[0])
+    sourceImageSeriesUID = self._getDICOMValue(sourceFileName, '0020,000E')
     logging.debug("SourceImageSeriesUID: {}".format(sourceImageSeriesUID))
     segmentationSOPInstanceUID = self._getDICOMValue(dcmSegmentationFile, "0008,0018")
     logging.debug("SegmentationSOPInstanceUID: {}".format(segmentationSOPInstanceUID))
@@ -513,27 +519,39 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
     #sourceVolumeNode.GetAttribute("DICOM.MeasurementUnitsCodeValue") # should return "{SUVbw}g/ml" for our case
     #note: imaging modality and units have already been verified by input volume selector
     
+    quantity = {
+      "CodeValue": sourceVolumeNode.GetVoxelValueQuantity().GetCodeValue(),
+      "CodingSchemeDesignator": sourceVolumeNode.GetVoxelValueQuantity().GetCodingSchemeDesignator(),
+      "CodeMeaning": sourceVolumeNode.GetVoxelValueQuantity().GetCodeMeaning()
+      }
+    
+    units = {
+      "CodeValue": sourceVolumeNode.GetVoxelValueUnits().GetCodeValue(),
+      "CodingSchemeDesignator": sourceVolumeNode.GetVoxelValueUnits().GetCodingSchemeDesignator(),
+      "CodeMeaning": sourceVolumeNode.GetVoxelValueUnits().GetCodeMeaning()
+      }
+    
     # mean
     item = dict()
     item["value"] = self.meanValueLineEdit.text
-    item["quantity"] = {"CodeValue": "126401", "CodingSchemeDesignator": "DCM", "CodeMeaning": "SUVbw"}
-    item["units"] = {"CodeValue": "{SUVbw}g/ml", "CodingSchemeDesignator": "UCUM", "CodeMeaning": "Standardized Uptake Value body weight"}
+    item["quantity"] = quantity
+    item["units"] = units
     item["derivationModifier"] = {"CodeValue": "R-00317", "CodingSchemeDesignator": "SRT", "CodeMeaning": "Mean" }
     measurementItems.append(item)
     
     # standard deviation
     item = dict()
     item["value"] = self.stdValueLineEdit.text
-    item["quantity"] = {"CodeValue": "126401", "CodingSchemeDesignator": "DCM", "CodeMeaning": "SUVbw"}
-    item["units"] = {"CodeValue": "{SUVbw}g/ml", "CodingSchemeDesignator": "UCUM", "CodeMeaning": "Standardized Uptake Value body weight"}
+    item["quantity"] = quantity
+    item["units"] = units
     item["derivationModifier"] = {"CodeValue": "R-10047", "CodingSchemeDesignator": "SRT", "CodeMeaning": "Standard Deviation" }
     measurementItems.append(item)
     
     # median
     item = dict()
     item["value"] = self.medianValueLineEdit.text
-    item["quantity"] = {"CodeValue": "126401", "CodingSchemeDesignator": "DCM", "CodeMeaning": "SUVbw"}
-    item["units"] = {"CodeValue": "{SUVbw}g/ml", "CodingSchemeDesignator": "UCUM", "CodeMeaning": "Standardized Uptake Value body weight"}
+    item["quantity"] = quantity
+    item["units"] =units
     item["derivationModifier"] = {"CodeValue": "R-00319", "CodingSchemeDesignator": "SRT", "CodeMeaning": "Median" }
     measurementItems.append(item)
     
@@ -555,6 +573,7 @@ class PETLiverUptakeMeasurementQRLogic(ScriptedLoadableModuleLogic):
 # PETLiverUptakeMeasurementQRTest
 #
 
+from DICOMLib import DICOMUtils
 class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
   """
   This is the test case for your scripted module.
@@ -562,16 +581,307 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
-  def setUp(self):
-    """ Do whatever is needed to reset the state - typically a scene clear will be enough.
-    """
-    slicer.mrmlScene.Clear(0)
-
   def runTest(self):
     """Run as few or as many tests as needed here.
     """
     self.setUp()
     self.test_PETLiverUptakeMeasurementQR1()
+    slicer.mrmlScene.Clear(0)
+    self.test_PETLiverUptakeMeasurementQR2()
+    self.tearDown()
+    
+  def setUp(self):
+    """ Open temporary DICOM database
+    """
+    slicer.mrmlScene.Clear(0)
+    self.tempDicomDatabase = os.path.join(slicer.app.temporaryPath,'PETTest')
+    self.originalDicomDatabase = DICOMUtils.openTemporaryDatabase(self.tempDicomDatabase)
+
+  def doCleanups(self):
+    """ cleanup temporary data in case an exception occurs
+    """ 
+    self.tearDown()    
+  
+  def tearDown(self):
+    """ Close temporary DICOM database and remove temporary data
+    """ 
+    import shutil
+    if self.originalDicomDatabase:
+      DICOMUtils.closeTemporaryDatabase(self.originalDicomDatabase, True)
+      shutil.rmtree(self.tempDicomDatabase) # closeTemporaryDatabase cleanup doesn't work. We need to do it manually
+      self.originalDicomDatabase = None
+  
+  def loadTestData(self):
+    """ load SUV normalized PET scan from DICOM file
+    """ 
+    import urllib
+    UID = '1.3.6.1.4.1.14519.5.2.1.2744.7002.886851941687931416391879144903'  
+    quantity = slicer.vtkCodedEntry()
+    quantity.SetFromString('CodeValue:126400|CodingSchemeDesignator:DCM|CodeMeaning:Standardized Uptake Value')
+    units = slicer.vtkCodedEntry()
+    units.SetFromString('CodeValue:{SUVbw}g/ml|CodingSchemeDesignator:UCUM|CodeMeaning:Standardized Uptake Value body weight')      
+    url = 'http://slicer.kitware.com/midas3/download/item/257234/QIN-HEADNECK-01-0139-PET.zip'
+    zipFile = 'QIN-HEADNECK-01-0139-PET.zip'
+    suvNormalizationFactor = 0.00040166400000000007
+    destinationDirectory = self.tempDicomDatabase
+    filePath = os.path.join(destinationDirectory, zipFile)
+    # download dataset if necessary
+    if not len(slicer.dicomDatabase.filesForSeries(UID)):
+      filePath = os.path.join(destinationDirectory, zipFile)
+      if not os.path.exists(os.path.dirname(filePath)):
+        os.makedirs(os.path.dirname(filePath))
+      logging.debug('Saving download %s to %s ' % (url, filePath))
+      if not os.path.exists(filePath) or os.stat(filePath).st_size == 0:
+        slicer.util.delayDisplay('Requesting download of %s...\n' % url, 1000)
+        urllib.urlretrieve(url, filePath)
+      if os.path.exists(filePath) and os.path.splitext(filePath)[1]=='.zip':
+        success = slicer.app.applicationLogic().Unzip(filePath, destinationDirectory)
+        if not success:
+          logging.error("Archive %s was NOT unzipped successfully." %  filePath)
+      indexer = ctk.ctkDICOMIndexer()
+      indexer.addDirectory(slicer.dicomDatabase, destinationDirectory, None)
+      indexer.waitForImportFinished()
+      
+    # load dataset and as SUVbw; disable all other DICOM plugings to assure we get the "right" type
+    dicomWidget = slicer.modules.dicom.widgetRepresentation().self()
+    dicomPluginCheckbox =  dicomWidget.detailsPopup.pluginSelector.checkBoxByPlugin
+    dicomPluginStates = {(key,value.checked) for key,value in dicomPluginCheckbox.iteritems()}
+    for cb in dicomPluginCheckbox.itervalues(): cb.checked=False
+    dicomPluginCheckbox['DICOMScalarVolumePlugin'].checked = True
+    success=DICOMUtils.loadSeriesByUID([UID])    
+    for key,value in dicomPluginStates:
+      dicomPluginCheckbox[key].checked=value
+    if not success:
+      logging.error("Unable to load dicom data %s\n." %  UID)
+    imageNode = slicer.mrmlScene.GetFirstNodeByClass('vtkMRMLScalarVolumeNode')
+    if not imageNode:
+      logging.error("Volume not loaded\n.")
+      
+    # apply the SUVbw conversion factor and set units and quantity
+    multiplier = vtk.vtkImageMathematics()
+    multiplier.SetOperationToMultiplyByK()
+    multiplier.SetConstantK(suvNormalizationFactor)
+    multiplier.SetInput1Data(imageNode.GetImageData())
+    multiplier.Update()
+    imageNode.GetImageData().DeepCopy(multiplier.GetOutput())
+    imageNode.GetVolumeDisplayNode().SetWindowLevel(6,3)
+    imageNode.GetVolumeDisplayNode().SetAndObserveColorNodeID('vtkMRMLColorTableNodeInvertedGrey')
+    imageNode.SetVoxelValueQuantity(quantity)
+    imageNode.SetVoxelValueUnits(units)    
+    
+    return imageNode
 
   def test_PETLiverUptakeMeasurementQR1(self):
-    pass
+    """ test standard segmentation and report generation
+    """ 
+    self.delayDisplay('Loading PET DICOM dataset (including download if necessary)')
+    petNode = self.loadTestData()
+        
+    self.delayDisplay('Running segmentation')
+    m = slicer.util.mainWindow()
+    m.moduleSelector().selectModule('PETLiverUptakeMeasurementQR')
+    qrWidget = slicer.modules.PETLiverUptakeMeasurementQRWidget
+    qrWidget.inputSelector.setCurrentNode(petNode)
+    segmentationNode = qrWidget.segmentationSelector.addNode()
+    qrWidget.segmentButton.click()    
+    
+    self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-2.36253)<0.01)
+    self.assertTrue(abs(float(qrWidget.stdValueLineEdit.text)-0.402997)<0.01)
+    self.assertTrue(abs(float(qrWidget.medianValueLineEdit.text)-2.335)<0.01)
+      
+    self.delayDisplay('Completing and writing DICOM report')
+    qrWidget.readerValueLineEdit.text = 'autotest'
+    self.assertTrue(qrWidget.saveReport(completed=True))
+    
+    self.delayDisplay('Checking for DICOM SEG and SR')
+    import dicom
+    patientUID = DICOMUtils.getDatabasePatientUIDByPatientName('QIN-HEADNECK-01-0139')
+    studies = slicer.dicomDatabase.studiesForPatient(patientUID)
+    series = slicer.dicomDatabase.seriesForStudy(studies[0])
+    SRSeries = None
+    SEGSeries = None
+    for serie in series:
+      description = slicer.dicomDatabase.descriptionForSeries(serie)
+      if description=='Automatic Liver Reference Region Segmentation':
+        SEGSeries = serie
+      if description=='Liver Reference Region Measurement Report':
+        SRSeries = serie
+    self.assertIsNotNone(SRSeries)
+    self.assertIsNotNone(SEGSeries)
+    SRFile = slicer.dicomDatabase.filesForSeries(SRSeries)[0]
+     
+    self.delayDisplay('Loading DICOM SR and verifying stored measurements')
+    sr = dicom.read_file(SRFile)
+    dicomMean = self._getMeasuredValue(sr,'Mean')
+    self.assertIsNotNone(dicomMean)
+    self.assertEqual(dicomMean.MeasuredValueSequence[0].NumericValue, 2.36253)
+    dicomStandardDeviation = self._getMeasuredValue(sr,'Standard Deviation')
+    self.assertIsNotNone(dicomStandardDeviation)
+    self.assertEqual(dicomStandardDeviation.MeasuredValueSequence[0].NumericValue, 0.402997)
+    dicomMedian = self._getMeasuredValue(sr,'Median')
+    self.assertIsNotNone(dicomMedian)
+    self.assertEqual(dicomMedian.MeasuredValueSequence[0].NumericValue, 2.335)
+    
+    self.delayDisplay('Test passed!')  
+
+  def _getMeasuredValue(self, item, ConceptCodeMeaning):
+    """ traverse pyDicom object hierarchy to search for measurement sequence with matching ConceptCodeMeaning
+    """ 
+    if 'MeasuredValueSequence' in item and \
+      'NumericValue' in item.MeasuredValueSequence[0] and \
+      'ContentSequence' in item and \
+      'ConceptCodeSequence' in item.ContentSequence[0] and \
+      'CodeMeaning' in item.ContentSequence[0].ConceptCodeSequence[0] and \
+      item.ContentSequence[0].ConceptCodeSequence[0].CodeMeaning==ConceptCodeMeaning:
+      return item
+    if 'ContentSequence' in item:
+     for csItem in item.ContentSequence:
+       r = self._getMeasuredValue(csItem, ConceptCodeMeaning)
+       if r: return r
+    return None    
+    
+  def test_PETLiverUptakeMeasurementQR2(self):
+    """ test segmentation options
+    """
+    self.delayDisplay('Loading PET DICOM dataset (including download if necessary)')
+    petNode = self.loadTestData()
+        
+    qrWidget = slicer.modules.PETLiverUptakeMeasurementQRWidget
+    qrWidget.inputSelector.setCurrentNode(petNode)
+    segmentationNode = qrWidget.segmentationSelector.addNode()
+    
+    self.delayDisplay('Running segmentation with standard settings')
+    qrWidget.segmentButton.click()        
+    self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-2.36253)<0.01)
+    
+    self.delayDisplay('Specifying annotation ROI')
+    roi=slicer.vtkMRMLAnnotationROINode()
+    roi.SetXYZ([-34,243,-1168])
+    roi.SetRadiusXYZ([85,102,82])
+    roi.SetName('ROI')
+    slicer.mrmlScene.AddNode(roi)
+    qrWidget.regionSelector.setCurrentNode(roi)
+    qrWidget.segmentButton.click()      
+    self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-2.91891)<0.01) 
+        
+    self.delayDisplay('Changing erosion range')
+    originalErosion = qrWidget.erosionSlider.value
+    qrWidget.erosionSlider.value = 0
+    qrWidget.segmentButton.click()        
+    self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-2.71982)<0.01)    
+    
+    self.delayDisplay('Changing thresholds')
+    originalMinimValue = qrWidget.thresholdRangeSlider.minimumValue
+    originalMaximumValue = qrWidget.thresholdRangeSlider.maximumValue
+    qrWidget.thresholdRangeSlider.minimumValue = 2
+    qrWidget.thresholdRangeSlider.maximumValue = 20
+    qrWidget.segmentButton.click()      
+    self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-3.72669)<0.01)     
+    
+    self.delayDisplay('Completing and writing DICOM report')
+    qrWidget.readerValueLineEdit.text = 'semiautotest'
+    self.assertTrue(qrWidget.saveReport(completed=True))
+    
+    self.delayDisplay('Testing that report was saved as semiautomatic result')
+    import dicom
+    patientUID = DICOMUtils.getDatabasePatientUIDByPatientName('QIN-HEADNECK-01-0139')
+    studies = slicer.dicomDatabase.studiesForPatient(patientUID)
+    series = slicer.dicomDatabase.seriesForStudy(studies[0])
+    SEGSeries = None
+    for serie in series:
+      description = slicer.dicomDatabase.descriptionForSeries(serie)
+      if description=='Semiautomatic Liver Reference Region Segmentation':
+        SEGSeries = serie
+    self.assertIsNotNone(SEGSeries)
+    
+    # reset values
+    qrWidget.regionSelector.removeCurrentNode()
+    qrWidget.erosionSlider.value = originalErosion
+    qrWidget.thresholdRangeSlider.minimumValue = originalMinimValue
+    qrWidget.thresholdRangeSlider.maximumValue = originalMaximumValue    
+    
+    self.delayDisplay('Test passed!')
+      
+  def _loadTestData_WithPETDICOMExtension(self):
+    """ load SUV normalized PET scan from DICOM fileassuming Slicer-PETDICOM extension is installed and enabled
+    """ 
+    from DICOMLib import DICOMUtils
+    import urllib
+    data = {
+      'PETVolume': {
+        'UID': '1.3.6.1.4.1.14519.5.2.1.2744.7002.886851941687931416391879144903',
+        'url': 'http://slicer.kitware.com/midas3/download/item/257234/QIN-HEADNECK-01-0139-PET.zip',
+        'zipFile': 'QIN-HEADNECK-01-0139-PET.zip',
+        'SUVNormalizationFactor': 0.00040166400000000007
+      }
+    }  
+    destinationDirectory = self.tempDicomDatabase
+    for key, value in data.iteritems(): # download data if necessary
+      UID = value['UID']
+      if not len(slicer.dicomDatabase.filesForSeries(UID)):
+        url = value['url']
+        zipFile = value['zipFile']
+        filePath = os.path.join(destinationDirectory, zipFile)
+        if not os.path.exists(os.path.dirname(filePath)):
+          os.makedirs(os.path.dirname(filePath))
+        logging.debug('Saving download %s to %s ' % (url, filePath))
+        if not os.path.exists(filePath) or os.stat(filePath).st_size == 0:
+          slicer.util.delayDisplay('Requesting download of %s...\n' % url, 1000)
+          urllib.urlretrieve(url, filePath)
+        if os.path.exists(filePath) and os.path.splitext(filePath)[1]=='.zip':
+          success = slicer.app.applicationLogic().Unzip(filePath, destinationDirectory)
+          if not success:
+            logging.error("Archive %s was NOT unzipped successfully." %  filePath)
+      indexer = ctk.ctkDICOMIndexer()
+      indexer.addDirectory(slicer.dicomDatabase, destinationDirectory, None)
+      indexer.waitForImportFinished()
+    # load dataset
+    success=DICOMUtils.loadSeriesByUID([data['PETVolume']['UID']])
+    if not success:
+      logging.error("Unable to load dicom data %s\n." %  data['PETVolume']['UID'])      
+    
+    return slicer.mrmlScene.GetFirstNodeByClass('vtkMRMLScalarVolumeNode')
+    
+  def _test_PETLiverUptakeMeasurementQR2_WithQRExtension(self):
+    """ verify SR measurements assuming QuantiativeReporting Extension is installed and enabled
+    """
+    from DICOMLib import DICOMUtils
+    self.delayDisplay('Loading DICOM SEG and SR')
+    
+    # note: introduces dependency on QuantiativeReporting and DICOMPETExtension
+    
+    # with QuantiativeReporting installed, this should load the DICOM SR and SEG together with the PET scan
+    # disable all dicom plugins except those necessary
+    dicomWidget = slicer.modules.dicom.widgetRepresentation().self()
+    dicomPluginCheckbox =  dicomWidget.detailsPopup.pluginSelector.checkBoxByPlugin
+    dicomPluginStates = {(key,value.checked) for key,value in dicomPluginCheckbox.iteritems()}
+    for cb in dicomPluginCheckbox.itervalues():
+      cb.checked=False
+    dicomPluginCheckbox['DICOMRWVMPlugin'].checked = True
+    dicomPluginCheckbox['DICOMPETSUVPlugin'].checked = True
+    dicomPluginCheckbox['DICOMSegmentationPlugin'].checked = True
+    dicomPluginCheckbox['DICOMTID1500Plugin'].checked = True
+    DICOMUtils.loadPatientByName('QIN-HEADNECK-01-0139')   
+    for key,value in dicomPluginStates:
+      dicomPluginCheckbox[key].checked=value
+      
+    # with QuantiativeReporting installed, this should load the DICOM SR and SEG together with the PET scan
+    DICOMUtils.loadPatientByName('QIN-HEADNECK-01-0139')
+    tableNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLTableNode")
+    self.assertIsNotNone(tableNode, "Loading SR into mrmlScene failed. No vtkMRMLTableNodes were found within the scene.")
+    self.assertEqual(tableNode.GetNumberOfRows(),1)
+    self.assertTrue(tableNode.GetNumberOfColumns()>3)
+    self.assertEqual(tableNode.GetColumnName(0),'Segment')
+    self.assertEqual(tableNode.GetColumnName(1),'Mean [{SUVbw}g/ml]')
+    self.assertEqual(tableNode.GetColumnName(2),'Standard Deviation [{SUVbw}g/ml]')
+    self.assertEqual(tableNode.GetColumnName(3),'Median [{SUVbw}g/ml]')
+    self.assertEqual(tableNode.GetCellText(0,0),'Liver reference region')
+    self.assertTrue(abs(float(tableNode.GetCellText(0,1))-2.36253)<0.01)
+    self.assertTrue(abs(float(tableNode.GetCellText(0,2))-0.402997)<0.01)
+    self.assertTrue(abs(float(tableNode.GetCellText(0,3))-2.335)<0.01)
+    self.delayDisplay('Test passed!')
+    
+    for key,value in dicomPluginStates:
+      dicomPluginCheckbox[key].checked=value  
+    
+    
