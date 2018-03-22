@@ -19,11 +19,19 @@ find_package(Slicer REQUIRED)
 include(${Slicer_USE_FILE})
 
 #find_package(DCMQI REQUIRED)
-set(DEPENDENCIES_ADDITIONAL_MODULE_PATHS
-  ${DCMQI_DIR}/bin
-  ${DCMQI_DIR}/${Slicer_CLIMODULES_LIB_DIR}
-  )
-  
+if(CMAKE_CONFIGURATION_TYPES)
+  set(DEPENDENCIES_ADDITIONAL_MODULE_PATHS "")
+  foreach(config ${CMAKE_CONFIGURATION_TYPES})
+    list(APPEND DEPENDENCIES_ADDITIONAL_MODULE_PATHS "${DCMQI_DIR}/bin/${config}")
+    list(APPEND DEPENDENCIES_ADDITIONAL_MODULE_PATHS "${DCMQI_DIR}/${Slicer_CLIMODULES_LIB_DIR/${config}")
+  endforeach()
+else()
+  set(DEPENDENCIES_ADDITIONAL_MODULE_PATHS
+    ${DCMQI_DIR}/bin
+    ${DCMQI_DIR}/${Slicer_CLIMODULES_LIB_DIR}
+    )
+endif()
+
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(PETLiverUptakeMeasurement)
