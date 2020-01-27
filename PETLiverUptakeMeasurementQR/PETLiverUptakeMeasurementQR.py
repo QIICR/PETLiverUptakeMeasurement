@@ -573,6 +573,7 @@ class PETLiverUptakeMeasurementQRLogic(ScriptedLoadableModuleLogic):
 # PETLiverUptakeMeasurementQRTest
 #
 
+import pydicom
 from DICOMLib import DICOMUtils
 class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
   """
@@ -610,7 +611,7 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
       import shutil
       if os.path.exists(self.tempDataDir):
         shutil.rmtree(self.tempDataDir)
-    except Exception, e:
+    except Exception as e:
       import traceback
       traceback.print_exc()
       self.delayDisplay('Test caused exception!\n' + str(e),self.delayMs*2)
@@ -626,25 +627,17 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
       os.mkdir(self.tempDataDir)
     if not os.access(zipFileData, os.F_OK):
       os.mkdir(zipFileData)
-
-    dicomWidget = slicer.modules.dicom.widgetRepresentation().self()
-    dicomPluginCheckbox =  dicomWidget.detailsPopup.pluginSelector.checkBoxByPlugin
-    dicomPluginStates = {(key,value.checked) for key,value in dicomPluginCheckbox.iteritems()}
-    for cb in dicomPluginCheckbox.itervalues(): cb.checked=False
-    dicomPluginCheckbox['DICOMScalarVolumePlugin'].checked = True
-
-    # Download, unzip, import, and load data. Verify loaded nodes.
-    loadedNodes = {'vtkMRMLScalarVolumeNode':1}
-    with DICOMUtils.LoadDICOMFilesToDatabase(zipFileUrl, zipFilePath, zipFileData, expectedNumOfFiles, {}, loadedNodes) as success:
-      self.assertTrue(success)
-      print ('loading returned true')
-
-    self.assertEqual( len( slicer.util.getNodes('vtkMRMLSubjectHierarchyNode*') ), 1 )
-    imageNode = slicer.mrmlScene.GetFirstNodeByClass('vtkMRMLScalarVolumeNode')
-
-    for key,value in dicomPluginStates:
-      dicomPluginCheckbox[key].checked=value
-
+      slicer.util.downloadAndExtractArchive( zipFileUrl, zipFilePath, zipFileData, expectedNumOfFiles)
+    DICOMUtils.importDicom(zipFileData)
+    
+    # load dataset
+    dicomFiles = slicer.util.getFilesInDirectory(zipFileData)
+    loadablesByPlugin, loadEnabled = DICOMUtils.getLoadablesFromFileLists([dicomFiles],['DICOMScalarVolumePlugin'])
+    loadedNodeIDs = DICOMUtils.loadLoadables(loadablesByPlugin)
+    imageNode = slicer.mrmlScene.GetNodeByID(loadedNodeIDs[0])
+    imageNode.SetSpacing(3.3940266832237, 3.3940266832237, 2.02490234375) # mimic spacing as produced by Slicer 4.10 for which the test was originally developed
+    imageNode.SetOrigin(285.367523193359375,494.58682250976556816,-1873.3819580078125) # mimic origin as produced by Slicer 4.10 for which the test was originally developed
+    
     # apply the SUVbw conversion factor and set units and quantity
     suvNormalizationFactor = 0.00040166400000000007
     quantity = slicer.vtkCodedEntry()
@@ -693,7 +686,6 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
         self.assertTrue(qrWidget.saveReport(completed=True))
 
         self.delayDisplay('Checking for DICOM SEG and SR')
-        import dicom
         patientUID = DICOMUtils.getDatabasePatientUIDByPatientName(self.patienName)
         studies = slicer.dicomDatabase.studiesForPatient(patientUID)
         series = slicer.dicomDatabase.seriesForStudy(studies[0])
@@ -710,7 +702,7 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
         SRFile = slicer.dicomDatabase.filesForSeries(SRSeries)[0]
 
         self.delayDisplay('Loading DICOM SR and verifying stored measurements')
-        sr = dicom.read_file(SRFile)
+        sr = pydicom.read_file(SRFile)
         dicomMean = self._getMeasuredValue(sr,'Mean')
         self.assertIsNotNone(dicomMean)
         self.assertEqual(dicomMean.MeasuredValueSequence[0].NumericValue, 2.36253)
@@ -726,7 +718,7 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
 
         self.delayDisplay('Test passed!')
 
-    except Exception, e:
+    except Exception as e:
       import traceback
       traceback.print_exc()
       self.delayDisplay('Test caused exception!\n' + str(e),self.delayMs*2)
@@ -795,7 +787,6 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
         self.assertTrue(qrWidget.saveReport(completed=True))
 
         self.delayDisplay('Testing that report was saved as semiautomatic result')
-        import dicom
         patientUID = DICOMUtils.getDatabasePatientUIDByPatientName('QIN-HEADNECK-01-0139')
         studies = slicer.dicomDatabase.studiesForPatient(patientUID)
         series = slicer.dicomDatabase.seriesForStudy(studies[0])
@@ -817,7 +808,7 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
 
         self.delayDisplay('Test passed!')
 
-    except Exception, e:
+    except Exception as e:
       import traceback
       traceback.print_exc()
       self.delayDisplay('Test caused exception!\n' + str(e),self.delayMs*2)
