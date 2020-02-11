@@ -270,7 +270,9 @@ FindCentroid(OutputImagePointer outputImage)
 	centroid[2] = 0;
 
 	PointType highBoundary;
+	highBoundary.Fill(0.0);
 	PointType lowBoundary;
+	lowBoundary.Fill(0.0);
 
 	typename InputImageType::IndexType highest;
 	highest[0] = 0;	highest[1] = 0;	highest[2] = 0;
