@@ -189,6 +189,7 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   thresholdFilter->SetLowerThreshold(m_LowerThreshold);
   thresholdFilter->SetInput(inputImage);
   thresholdFilter->SetInsideValue(1);
+  thresholdFilter->SetOutsideValue(0);
 	//image thresholded
 
 //Need to remove parts below a certain volume
@@ -204,16 +205,17 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 
   sbsFilter->SetFilter(holeFilter);
   sbsFilter->SetInput(thresholdFilter->GetOutput());
-  
+
 
 
   typedef itk::ConnectedComponentImageFilter<TOutputImage, TOutputImage> ComponentFilter;
   typename ComponentFilter::Pointer componentFilter = ComponentFilter::New();
   componentFilter->SetInput(sbsFilter->GetOutput());
+  componentFilter->SetBackgroundValue( 0 );
 
   componentFilter->Update();
-
   
+
   /*typedef typename itk::BinaryBallStructuringElement<OutputImagePixelType, 3 > StructuringElementType;
   //typename StructuringElementType::Pointer SE = StructuringElementType::New();
   StructuringElementType SE;
@@ -253,8 +255,8 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 template <class TInputImage, class TOutputImage>
 void SegmentBrainFilter<TInputImage, TOutputImage>::
 FindCentroid(OutputImagePointer outputImage)
-{
-	
+{	
+
 	//go to highest slice and find pixel value for the brain
 	//
 	//while slices contain that pixel value, keep going down
@@ -344,7 +346,7 @@ FindCentroid(OutputImagePointer outputImage)
 		itkDebugMacro("reverse it");
 		//std::cout<<"reverse it"<<std::endl;
 		//int highestZ = it2.GetIndex()[2];
-		while (/*it2.GetIndex()[2] == highestZ &&*/ brainLabel == 0 && it2.IsAtEnd() == false)
+		while (/*it2.GetIndex()[2] == highestZ &&*/ brainLabel == 0 && it2.IsAtReverseEnd() == false)
 		{
 			brainLabel = it2.Get();
 			if (brainLabel != 0 && ! MinimumVolume(brainLabel, outputImage) )
