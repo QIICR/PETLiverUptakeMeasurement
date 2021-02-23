@@ -90,12 +90,12 @@ ROIType convertToROI(std::vector<float> region, InputImageType::Pointer img)
     {
         ROIType userROI;
         InputImageType::PointType pointA;
-        pointA[0] = -region[0]-region[3];
-        pointA[1] = -region[1]-region[4];
+        pointA[0] = region[0]-region[3];
+        pointA[1] = region[1]-region[4];
         pointA[2] = region[2]-region[5];
         InputImageType::PointType pointB;
-        pointB[0] = -region[0]+region[3];
-        pointB[1] = -region[1]+region[4];
+        pointB[0] = region[0]+region[3];
+        pointB[1] = region[1]+region[4];
         pointB[2] = region[2]+region[5];
         InputImageType::IndexType idxA;
         img->TransformPhysicalPointToIndex(pointA,idxA);
