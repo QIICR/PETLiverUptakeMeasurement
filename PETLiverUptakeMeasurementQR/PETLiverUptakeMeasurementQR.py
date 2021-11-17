@@ -619,7 +619,7 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
   def loadTestData(self):
     self.patienName = 'QIN-HEADNECK-01-0139'
     #download data and add to dicom database
-    zipFileUrl = 'http://slicer.kitware.com/midas3/download/item/257234/QIN-HEADNECK-01-0139-PET.zip'
+    zipFileUrl = 'http://github.com/QIICR/PETTumorSegmentation/releases/download/4.10.2/QIN-HEADNECK-01-0139-PET.zip'
     zipFilePath = self.tempDataDir+'/dicom.zip'
     zipFileData = self.tempDataDir+'/dicom'
     expectedNumOfFiles = 545
@@ -821,7 +821,7 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
     data = {
       'PETVolume': {
         'UID': '1.3.6.1.4.1.14519.5.2.1.2744.7002.886851941687931416391879144903',
-        'url': 'http://slicer.kitware.com/midas3/download/item/257234/QIN-HEADNECK-01-0139-PET.zip',
+        'url': 'http://github.com/QIICR/PETTumorSegmentation/releases/download/4.10.2/QIN-HEADNECK-01-0139-PET.zip',
         'zipFile': 'QIN-HEADNECK-01-0139-PET.zip',
         'SUVNormalizationFactor': 0.00040166400000000007
       }
