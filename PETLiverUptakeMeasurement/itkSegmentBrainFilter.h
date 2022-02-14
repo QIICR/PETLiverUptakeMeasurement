@@ -78,6 +78,8 @@ public:
   typedef SmartPointer<Self>                            Pointer;
   typedef SmartPointer<const Self>                      ConstPointer;
 
+  ITK_DISALLOW_COPY_AND_ASSIGN(SegmentBrainFilter);
+
   /** Method for creation through the object factory. */
   itkNewMacro(Self);
 
@@ -147,8 +149,6 @@ protected:
 private:
   void FindCentroid(OutputImagePointer outputImage);
   bool MinimumVolume(OutputImagePixelType label, OutputImagePointer image);
-  SegmentBrainFilter(const Self&); //purposely not implemented
-  void operator=(const Self&); //purposely not implemented
   PointType m_Centroid;
   PointType m_BoundarySize;
   PointType m_BoundaryStart;
