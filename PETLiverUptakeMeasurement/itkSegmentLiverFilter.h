@@ -198,7 +198,7 @@ public:
   PointType GetBoundaryStart();
 
 protected:
-  SegmentLiverFilter();
+  SegmentLiverFilter() = default;
   ~SegmentLiverFilter() override = default;
   void PrintSelf(std::ostream& os, Indent indent) const;
 
@@ -217,19 +217,19 @@ protected:
 private:
   PointType FindCentroid(OutputImagePointer outputImage);
   InputImageRegionType m_SearchROI;
-  bool m_SetUseSearchROI;
+  bool m_SetUseSearchROI{ false };
   PointType m_BrainCentroid;
   PointType m_SectorLocation;
   PointType m_LiverCentroid;	
-  bool m_UseBrainCentroid;
-  bool m_RealSpacing;
+  bool m_UseBrainCentroid{ false };
+  bool m_RealSpacing{ false };
   double m_MinZFromBrain;
   double m_MinXFromBrain;
-  OutputImagePixelType m_LowerThreshold;
-  OutputImagePixelType m_UpperThreshold;
-  bool m_SpacingDistance;
+  OutputImagePixelType m_LowerThreshold{ NumericTraits<OutputImagePixelType>::min() };
+  OutputImagePixelType m_UpperThreshold{ NumericTraits<OutputImagePixelType>::max() };
+  bool m_SpacingDistance{ false };
   double m_Radius;
-  float m_Erosion;
+  float m_Erosion{ 10 };
 };
 
 } // end namespace itk

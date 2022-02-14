@@ -58,20 +58,7 @@
 
 namespace itk
 {
-
-/**
- * Constructor
- */
-
-template <class TInputImage, class TOutputImage>
-SegmentBrainFilter<TInputImage, TOutputImage>
-::SegmentBrainFilter()
-{
-  m_UpperThreshold = NumericTraits<OutputImagePixelType>::max();
-  m_LowerThreshold = NumericTraits<OutputImagePixelType>::min();
-}//end constructor
-
-
+	
 template <class TInputImage, class TOutputImage>
 void
 SegmentBrainFilter<TInputImage, TOutputImage>

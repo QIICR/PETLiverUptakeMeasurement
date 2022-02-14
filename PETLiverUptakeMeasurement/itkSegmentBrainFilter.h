@@ -130,7 +130,7 @@ public:
 
 
 protected:
-  SegmentBrainFilter();
+  SegmentBrainFilter() = default;
   ~SegmentBrainFilter() override = default;
   void PrintSelf(std::ostream& os, Indent indent) const;
 
@@ -152,8 +152,8 @@ private:
   PointType m_Centroid;
   PointType m_BoundarySize;
   PointType m_BoundaryStart;
-  OutputImagePixelType m_LowerThreshold;
-  OutputImagePixelType m_UpperThreshold;
+  OutputImagePixelType m_LowerThreshold{ NumericTraits<OutputImagePixelType>::min() };
+  OutputImagePixelType m_UpperThreshold{ NumericTraits<OutputImagePixelType>::max() };
   float m_MinimumVolume;
   //bool m_Verbose;
   

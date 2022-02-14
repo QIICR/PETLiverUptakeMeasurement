@@ -44,24 +44,6 @@
 namespace itk
 {
 
-/**
- * Constructor
- */
-
-template <class TInputImage, class TOutputImage>
-SegmentLiverFilter<TInputImage, TOutputImage>
-::SegmentLiverFilter()
-{
-  m_UpperThreshold = NumericTraits<OutputImagePixelType>::max();
-  m_LowerThreshold = NumericTraits<OutputImagePixelType>::min();
-  m_RealSpacing = false;
-  m_SpacingDistance = false;
-  m_Erosion = 10;
-  m_UseBrainCentroid = false;
-  m_SetUseSearchROI = false;
-}//end constructor
-
-
 template <class TInputImage, class TOutputImage>
 void
 SegmentLiverFilter<TInputImage, TOutputImage>
