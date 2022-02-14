@@ -759,11 +759,10 @@ class PETLiverUptakeMeasurementQRTest(ScriptedLoadableModuleTest):
         self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-2.36253)<0.01)
 
         self.delayDisplay('Specifying annotation ROI')
-        roi=slicer.vtkMRMLAnnotationROINode()
+        roi = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLAnnotationROINode')
         roi.SetXYZ([-34,243,-1168])
         roi.SetRadiusXYZ([85,102,82])
         roi.SetName('ROI')
-        slicer.mrmlScene.AddNode(roi)
         qrWidget.regionSelector.setCurrentNode(roi)
         qrWidget.segmentButton.click()
         self.assertTrue(abs(float(qrWidget.meanValueLineEdit.text)-2.91891)<0.01)
