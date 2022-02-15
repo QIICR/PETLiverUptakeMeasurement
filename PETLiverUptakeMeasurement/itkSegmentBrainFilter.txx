@@ -164,14 +164,14 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 ::GenerateData( void )
 {
 
-  typedef typename TOutputImage::PixelType OutputPixelType;
+  using OutputPixelType = typename TOutputImage::PixelType;
 
   typename Superclass::InputImageConstPointer  inputImage = this->GetInput();
   typename TOutputImage::Pointer outputImage = this->GetOutput();
   outputImage->SetBufferedRegion( outputImage->GetRequestedRegion() );
   outputImage->Allocate();
 
-  typedef itk::BinaryThresholdImageFilter<TInputImage, TOutputImage> ThresholdFilter;
+  using ThresholdFilter = itk::BinaryThresholdImageFilter<TInputImage, TOutputImage>;
   typename ThresholdFilter::Pointer thresholdFilter = ThresholdFilter::New();
   thresholdFilter->SetLowerThreshold(m_LowerThreshold);
   thresholdFilter->SetInput(inputImage);
@@ -181,13 +181,13 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 
 //Need to remove parts below a certain volume
 
-  typedef itk::Image<OutputPixelType, 2> TOutputImage2D;
+  using TOutputImage2D = itk::Image<OutputPixelType, 2>;
 
-  typedef itk::GrayscaleFillholeImageFilter<TOutputImage2D, TOutputImage2D> HoleFilter;
+  using HoleFilter = itk::GrayscaleFillholeImageFilter<TOutputImage2D, TOutputImage2D>;
   typename HoleFilter::Pointer holeFilter = HoleFilter::New();
 
 
-  typedef itk::SliceBySliceImageFilter<TOutputImage, TOutputImage, HoleFilter, HoleFilter, TOutputImage2D, TOutputImage2D> SbSFilterType;
+  using SbSFilterType = itk::SliceBySliceImageFilter<TOutputImage, TOutputImage, HoleFilter, HoleFilter, TOutputImage2D, TOutputImage2D>;
   typename SbSFilterType::Pointer sbsFilter = SbSFilterType::New();
 
   sbsFilter->SetFilter(holeFilter);
@@ -195,7 +195,7 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 
 
 
-  typedef itk::ConnectedComponentImageFilter<TOutputImage, TOutputImage> ComponentFilter;
+  using ComponentFilter = itk::ConnectedComponentImageFilter<TOutputImage, TOutputImage>;
   typename ComponentFilter::Pointer componentFilter = ComponentFilter::New();
   componentFilter->SetInput(sbsFilter->GetOutput());
   componentFilter->SetBackgroundValue( 0 );
@@ -220,7 +220,7 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 
   typename TOutputImage::Pointer filteredImage = componentFilter->GetOutput();
 
-  typedef typename itk::ImageRegionIterator<TOutputImage> IteratorType;
+  using IteratorType = itk::ImageRegionIterator<TOutputImage> ;
   IteratorType it1(filteredImage, filteredImage->GetLargestPossibleRegion());
   IteratorType it2(outputImage, outputImage->GetLargestPossibleRegion());
   it1.GoToBegin();	it2.GoToBegin();
@@ -249,7 +249,7 @@ FindCentroid(OutputImagePointer outputImage)
 	//while slices contain that pixel value, keep going down
 	//on each slice, get numVoxels and centroid point
 	
-	typedef typename itk::ImageRegionIteratorWithIndex<TOutputImage> IteratorType;
+	using IteratorType = itk::ImageRegionIteratorWithIndex<TOutputImage> ;
 	IteratorType it1(outputImage, outputImage->GetLargestPossibleRegion());
 	IteratorType it2(outputImage, outputImage->GetLargestPossibleRegion());
 
@@ -431,7 +431,7 @@ MinimumVolume(OutputImagePixelType label, OutputImagePointer image)
 {
 	float spacePerVoxel = (image->GetSpacing()[0]) * (image->GetSpacing()[1]) * (image->GetSpacing()[2]);
 	float voxelCount = 0;
-	typedef typename itk::ImageRegionIteratorWithIndex<TOutputImage> IteratorType;
+	using IteratorType = itk::ImageRegionIteratorWithIndex<TOutputImage>;
 	IteratorType it(image, image->GetLargestPossibleRegion());
 	it.GoToBegin();
 	while (!it.IsAtEnd())

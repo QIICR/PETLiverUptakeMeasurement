@@ -33,17 +33,17 @@
 //
 namespace
 {
-typedef float InputPixelType;
-typedef unsigned char OutputPixelType;
-typedef itk::Image<InputPixelType,  3> InputImageType;
-typedef itk::Image<OutputPixelType, 3> OutputImageType;
-typedef InputImageType::RegionType ROIType;
+using InputPixelType = float;
+using OutputPixelType = unsigned char;
+using InputImageType = itk::Image<InputPixelType, 3>;
+using OutputImageType = itk::Image<OutputPixelType, 3>;
+using ROIType = InputImageType::RegionType;
 
 int getLiverRegionWithROI( int argc, char * argv[], InputImageType::Pointer petScan, OutputImageType::Pointer& liverRegion, ROIType roi )
 {
     PARSE_ARGS;
     
-    typedef itk::SegmentLiverFilter< InputImageType, OutputImageType > SegmentLiverFilterType;
+    using SegmentLiverFilterType = itk::SegmentLiverFilter<InputImageType, OutputImageType>;
     SegmentLiverFilterType::Pointer segmentLiver = SegmentLiverFilterType::New();
     segmentLiver->SetInput(petScan);
     segmentLiver->SetLowerThreshold(lowerThreshold);
@@ -59,8 +59,8 @@ int getLiverRegionWithROI( int argc, char * argv[], InputImageType::Pointer petS
         // identify brain
         const double threshold = 3.0;
         const double minimumVolume = 1000.0;
-        typedef itk::Image<long, 3> BrainOutputImageType;
-        typedef itk::SegmentBrainFilter< InputImageType, BrainOutputImageType > SegmentBrainFilterType;
+        using BrainOutputImageType = itk::Image<long, 3>;
+        using SegmentBrainFilterType = itk::SegmentBrainFilter<InputImageType, BrainOutputImageType>;
         SegmentBrainFilterType::Pointer segmentBrain = SegmentBrainFilterType::New();
         segmentBrain->SetInput(petScan);
         segmentBrain->SetLowerThreshold(threshold);
@@ -125,14 +125,14 @@ int main( int argc, char * argv[] )
 
   try
     {
-        typedef float InputPixelType;
-        typedef unsigned char OutputPixelType;
-        typedef itk::Image<InputPixelType,  3> InputImageType;
-        typedef itk::Image<OutputPixelType, 3> OutputImageType;
-        typedef InputImageType::RegionType ROIType;
+        using InputPixelType = float;
+        using OutputPixelType = unsigned char;
+        using InputImageType = itk::Image<InputPixelType, 3>;
+        using OutputImageType = itk::Image<OutputPixelType, 3>;
+        using ROIType = InputImageType::RegionType;
         
         // read pet scan
-        typedef itk::ImageFileReader<InputImageType>  ReaderType;
+        using ReaderType = itk::ImageFileReader<InputImageType> ;
         ReaderType::Pointer reader = ReaderType::New();
         reader->SetFileName( inputVolume.c_str() );
         reader->Update();
@@ -146,7 +146,7 @@ int main( int argc, char * argv[] )
         // write segmentation result, if requested
         if (outputVolume.size()>0)
         {
-          typedef itk::ImageFileWriter<OutputImageType> WriterType;
+          using WriterType = itk::ImageFileWriter<OutputImageType>;
           WriterType::Pointer writer = WriterType::New();
           writer->SetFileName( outputVolume.c_str() );
           writer->SetInput( liverRegion );
@@ -155,7 +155,7 @@ int main( int argc, char * argv[] )
         }
         
         // obtain measurements
-        typedef itk::LabelStatisticsImageFilter<InputImageType, OutputImageType> StatsFilterType;
+        using StatsFilterType = itk::LabelStatisticsImageFilter<InputImageType, OutputImageType>;
         StatsFilterType::Pointer stats = StatsFilterType::New();
         stats->SetInput(petScan);
         stats->SetLabelInput(liverRegion);

@@ -147,14 +147,14 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 {
   itkDebugMacro("GenerateData Start");
 
-  typename Superclass::InputImageConstPointer  inputImage = this->GetInput();
+  typename Superclass::InputImageConstPointer inputImage = this->GetInput();
   typename TOutputImage::Pointer outputImage = this->GetOutput();
   outputImage->SetBufferedRegion( outputImage->GetRequestedRegion() );
   outputImage->Allocate();
 
   //1. Threshold the input image
   itkDebugMacro("1. Threshold the input image");
-  typedef itk::BinaryThresholdImageFilter<TInputImage, TOutputImage> ThresholdFilter;
+  using ThresholdFilter = itk::BinaryThresholdImageFilter<TInputImage, TOutputImage>;
   typename ThresholdFilter::Pointer thresholdFilter = ThresholdFilter::New();
   thresholdFilter->SetLowerThreshold(m_LowerThreshold);
   //thresholdFilter->SetUpperThreshold(m_UpperThreshold);
@@ -164,15 +164,15 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 
   itkDebugMacro("2. Fill any 3D holes in the thresholded image");
   //2. Fill any 3D holes in the thresholded image
-  typedef itk::GrayscaleFillholeImageFilter<TOutputImage, TOutputImage> HoleFilter;
+  using HoleFilter = itk::GrayscaleFillholeImageFilter<TOutputImage, TOutputImage>;
   typename HoleFilter::Pointer holeFilter = HoleFilter::New();
   holeFilter->SetInput(thresholdFilter->GetOutput());
   
 
   itkDebugMacro("3. Create a distance map of the entire image");
   //3. Create a distance map of the entire image
-  typedef itk::Image<float,3> MaurerImage;
-  typedef typename itk::SignedMaurerDistanceMapImageFilter<TOutputImage, MaurerImage > MaurerFilter;
+  using MaurerImage = itk::Image<float,3>;
+  using MaurerFilter = itk::SignedMaurerDistanceMapImageFilter<TOutputImage, MaurerImage >;
   typename MaurerFilter::Pointer distanceMapFilter = MaurerFilter::New();
   distanceMapFilter->SetInput(holeFilter->GetOutput());
   if (m_RealSpacing == true)
@@ -185,8 +185,8 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 
   itkDebugMacro("4. Manually remove from the distance map values that are part of the background in the thresholded image");
   //4. Manually remove from the distance map values that are part of the background in the thresholded image
-  typedef typename itk::ImageRegionIterator<TOutputImage> OutputIteratorType;
-  typedef typename itk::ImageRegionIterator<MaurerImage > MaurerIteratorType; 
+  using OutputIteratorType = itk::ImageRegionIterator<TOutputImage>;
+  using MaurerIteratorType = itk::ImageRegionIterator<MaurerImage>; 
   MaurerImage::Pointer distanceMap = distanceMapFilter->GetOutput();
   MaurerIteratorType itDist(distanceMap, distanceMap->GetLargestPossibleRegion());
   OutputIteratorType itBin(holeFilter->GetOutput(), holeFilter->GetOutput()->GetLargestPossibleRegion());  
@@ -203,7 +203,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 
   itkDebugMacro("5. Find regional minima, the points furthest into the object part of the image");
   //5. Find regional minima, the points furthest into the object part of the image
-  typedef typename itk::RegionalMinimaImageFilter< MaurerImage, MaurerImage > RegionalMinFilterType;
+  using RegionalMinFilterType = itk::RegionalMinimaImageFilter<MaurerImage, MaurerImage>;
   RegionalMinFilterType::Pointer regionalMinFilter = RegionalMinFilterType::New();
   regionalMinFilter->SetInput(distanceMap);
   regionalMinFilter->SetForegroundValue(1);
@@ -215,7 +215,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   itkDebugMacro("6. Find the edge of the sector where the liver may be");
   //6. Find the edge of the sector where the liver may be
   MaurerImage::Pointer regionalMinima = regionalMinFilter->GetOutput();
-  typedef typename itk::ImageRegionIteratorWithIndex<MaurerImage > IndexedMaurerIteratorType;
+  using IndexedMaurerIteratorType = itk::ImageRegionIteratorWithIndex<MaurerImage>;
   IndexedMaurerIteratorType itMin(regionalMinima, regionalMinima->GetLargestPossibleRegion());
   itMin.GoToBegin();
   itDist.GoToBegin();
@@ -294,7 +294,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   sphereCenter->Allocate();
   if (m_RealSpacing)	{	sphereCenter->SetSpacing(outputImage->GetSpacing());	sphereCenter->SetOrigin(outputImage->GetOrigin());	}
 
-  typedef typename itk::ImageRegionIteratorWithIndex<TOutputImage> IndexedOutputIteratorType;
+  using IndexedOutputIteratorType = itk::ImageRegionIteratorWithIndex<TOutputImage>;
   IndexedOutputIteratorType itSC(sphereCenter, sphereCenter->GetLargestPossibleRegion());
   itSC.GoToBegin();
   while (!itSC.IsAtEnd())
@@ -323,7 +323,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   itkDebugMacro("10. Threshold that map with an upper limit of the radius");
   //10. Threshold that map with an upper limit of the radius
   m_Radius = lowestValue * -1;
-  typedef itk::BinaryThresholdImageFilter<MaurerImage, TOutputImage> ThresholdSphereFilter;
+  using ThresholdSphereFilter = itk::BinaryThresholdImageFilter<MaurerImage, TOutputImage>;
   typename ThresholdSphereFilter::Pointer thresholdSphereFilter = ThresholdSphereFilter::New();
   thresholdSphereFilter->SetUpperThreshold(lowestValue*(-1));//Should be- pixel value at the original point		Previously was- m_RadiusSphere
   thresholdSphereFilter->SetInput(sphereDistance->GetOutput());
@@ -337,7 +337,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 
   itkDebugMacro("11. Erode the edge of the image by the erosion variable");
   //11. Erode the image edge
-  typedef typename itk::BinaryBallStructuringElement<OutputImagePixelType, 3 > StructuringElementType;
+  using StructuringElementType = itk::BinaryBallStructuringElement<OutputImagePixelType, 3 > ;
   StructuringElementType SE;
   
   //pixels = distance/spacing
@@ -345,7 +345,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   SE.SetRadius(radius);
   SE.CreateStructuringElement();
 
-  typedef typename itk::BinaryErodeImageFilter< TOutputImage, TOutputImage, StructuringElementType> ErodeImageFilterType;
+  using ErodeImageFilterType = itk::BinaryErodeImageFilter< TOutputImage, TOutputImage, StructuringElementType>;
   typename ErodeImageFilterType::Pointer eroder = ErodeImageFilterType::New();
   eroder->SetKernel( SE );
   eroder->SetErodeValue( 1 );
@@ -360,7 +360,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   tmp->SetSpacing(inputImage->GetSpacing());
 
 
-  typedef typename itk::ImageRegionIterator<TOutputImage> IteratorType;
+  using IteratorType = itk::ImageRegionIterator<TOutputImage> ;
   IteratorType it1(tmp, tmp->GetLargestPossibleRegion());
   IteratorType it2(outputImage, outputImage->GetLargestPossibleRegion());
   it1.GoToBegin();	it2.GoToBegin();
@@ -380,7 +380,7 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 template <class TInputImage, class TOutputImage>
 typename TOutputImage::PointType SegmentLiverFilter<TInputImage, TOutputImage>::GetBoundarySize()
 {
-	typedef typename itk::ImageRegionIteratorWithIndex<OutputImageType> OutputIterator;
+	using OutputIterator = itk::ImageRegionIteratorWithIndex<OutputImageType>;
 	OutputImagePointer output = this->GetOutput();
         OutputIterator it(output, output->GetLargestPossibleRegion());
 	it.GoToBegin();
@@ -431,7 +431,7 @@ typename TOutputImage::PointType SegmentLiverFilter<TInputImage, TOutputImage>::
 template <class TInputImage, class TOutputImage>
 typename TOutputImage::PointType SegmentLiverFilter<TInputImage, TOutputImage>::GetBoundaryStart()
 {
-	typedef typename itk::ImageRegionIteratorWithIndex<OutputImageType> OutputIterator;
+	using OutputIterator = itk::ImageRegionIteratorWithIndex<OutputImageType> ;
 	OutputImagePointer output = this->GetOutput();
         OutputIterator it(output, output->GetLargestPossibleRegion());
 	it.GoToBegin();
