@@ -15,7 +15,7 @@
  
  ==============================================================================*/
  
- /**
+/**
 \file	itkSegmentBrainFilter.h
 \brief	Segments the brain of a fairly specific variety of image.
 */
@@ -30,12 +30,8 @@
 *
 */
 
-
-
-
 #ifndef __itkSegmentBrainFilter_h
 #define __itkSegmentBrainFilter_h
-
 
 #include "itkLinearInterpolateImageFunction.h"
 #include "itkNearestNeighborInterpolateImageFunction.h"
@@ -98,7 +94,6 @@ public:
   using OutputImagePixelType = typename OutputImageType::PixelType;
 
   using PointType = typename TOutputImage::PointType ;
-  
 
   /** ImageDimension enumeration */
   static constexpr unsigned int InputImageDimension = TInputImage::ImageDimension;
@@ -106,16 +101,17 @@ public:
 
   itkSetMacro(UpperThreshold, InputImagePixelType);
   itkGetMacro(UpperThreshold, InputImagePixelType);
+
   itkSetMacro(LowerThreshold, InputImagePixelType);
   itkGetMacro(LowerThreshold, InputImagePixelType); 
+
   itkGetMacro(Centroid, PointType);
+
   itkGetMacro(BoundarySize, PointType);
   itkGetMacro(BoundaryStart, PointType);
 
   itkSetMacro(MinimumVolume, float);
   itkGetMacro(MinimumVolume, float);
-  //itkSetMacro(Verbose, bool);
-  //itkGetMacro(Verbose, bool);
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   /** Begin concept checking */
@@ -124,8 +120,6 @@ public:
                                         itkGetStaticConstMacro(OutputImageDimension)>));
   /** End concept checking */
 #endif
-
-
 
 protected:
   SegmentBrainFilter() = default;
@@ -153,8 +147,6 @@ private:
   OutputImagePixelType m_LowerThreshold{ NumericTraits<OutputImagePixelType>::min() };
   OutputImagePixelType m_UpperThreshold{ NumericTraits<OutputImagePixelType>::max() };
   float m_MinimumVolume;
-  //bool m_Verbose;
-  
 };
 
 } // end namespace itk

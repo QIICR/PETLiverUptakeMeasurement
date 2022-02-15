@@ -15,26 +15,22 @@
  
  ==============================================================================*/
  
- 
 /*
 *itkSegmentLiverFilter.txx
 *Implementation of itkSegmentLiverFilter.h.
 *
 *Programmer: Markus Van Tol
 *Date: 2/29/12
-*
-*
 */
-
 
 #ifndef __itkSegmentLiverFilter_txx
 #define __itkSegmentLiverFilter_txx
 
+#include <iostream>
 #include "itkSegmentLiverFilter.h"
 #include "itkImageRegionIteratorWithIndex.h"
 #include "itkImageRegionIterator.h"
 #include "itkImageRegionConstIterator.h"
-#include <iostream>
 #include "itkGrayscaleFillholeImageFilter.h"
 #include "itkBinaryThresholdImageFilter.h"
 #include <itkSignedMaurerDistanceMapImageFilter.h>
@@ -92,7 +88,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   itkDebugMacro("GenerateOutputInformation End");
 }//end GenerateOutputRegion
 
-
 template <class TInputImage, class TOutputImage>
 void
 SegmentLiverFilter<TInputImage, TOutputImage>
@@ -125,7 +120,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 
   itkDebugMacro("GenerateInputRequestedRegion End");
 }//end GenerateInputRequestedRegion
-
 
 /**
  * GenerateData Performs the diagonal image creation
@@ -172,7 +166,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   distanceMapFilter->SquaredDistanceOff();
   distanceMapFilter->Update();	//It appears to making the values negative, so I changed to searching for minima instead of maxima
 
-
   itkDebugMacro("4. Manually remove from the distance map values that are part of the background in the thresholded image");
   //4. Manually remove from the distance map values that are part of the background in the thresholded image
   using OutputIteratorType = itk::ImageRegionIterator<TOutputImage>;
@@ -188,8 +181,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
     ++itDist;
     ++itBin;
   }//end while !itDist.IsAtEnd()
-  
-
 
   itkDebugMacro("5. Find regional minima, the points furthest into the object part of the image");
   //5. Find regional minima, the points furthest into the object part of the image
@@ -200,7 +191,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   regionalMinFilter->SetBackgroundValue(0);
   regionalMinFilter->SetFlatIsMinima(false);
   regionalMinFilter->Update();
-
 
   itkDebugMacro("6. Find the edge of the sector where the liver may be");
   //6. Find the edge of the sector where the liver may be
@@ -240,7 +230,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
 
   }//end else
 
-
   itkDebugMacro("7. Find the lowest of the regional minima within the sector and set it as the location for the sphere.");
   //7. Find the lowest of the regional minima within the sector and set it as the location for the sphere.
   MaurerImage::IndexType lowestIndex;
@@ -274,7 +263,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   m_LiverCentroid[1] = lowestLocation[1];
   m_LiverCentroid[2] = lowestLocation[2];
 
-
   itkDebugMacro("8. Create the sphere by making a new image with just that pixel");
   //8. Create the sphere by making a new image with just that pixel
   auto sphereCenter = TOutputImage::New();
@@ -296,7 +284,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
     ++itSC;
   }//end while !itSC.IsAtEnd()
 
-
   itkDebugMacro("9. Make a distance map of the single-pixel image");
   //9. Make a distance map of the single-pixel image
   auto sphereDistance = MaurerFilter::New();
@@ -309,7 +296,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   sphereDistance->SquaredDistanceOff();
   sphereDistance->Update();
 
-
   itkDebugMacro("10. Threshold that map with an upper limit of the radius");
   //10. Threshold that map with an upper limit of the radius
   m_Radius = lowestValue * -1;
@@ -318,9 +304,10 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   thresholdSphereFilter->SetUpperThreshold(lowestValue*(-1));//Should be- pixel value at the original point		Previously was- m_RadiusSphere
   thresholdSphereFilter->SetInput(sphereDistance->GetOutput());
   thresholdSphereFilter->SetInsideValue(1);
-  //thresholdSphereFilter->Update();
-  /*typedef itk::ImageFileWriter<TOutputImage> ImageWriterType;
-  typename ImageWriterType::Pointer writer = ImageWriterType::New();
+
+  /*tthresholdSphereFilter->Update();
+  using ImageWriterType = itk::ImageFileWriter<TOutputImage> ;
+  auto writer = ImageWriterType::New();
   writer->SetInput(thresholdSphereFilter->GetOutput());
   writer->SetFileName("liver_after_sphereFilter.vtk");
   writer->Update();*/
@@ -342,13 +329,11 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   eroder->SetInput( thresholdSphereFilter->GetOutput() );
   eroder->Update(); 
 
-
   itkDebugMacro("12. Copy that image into the output image");
   //11. Copy that image into the output image
   auto tmp = eroder->GetOutput();
   tmp->SetOrigin(inputImage->GetOrigin());
   tmp->SetSpacing(inputImage->GetSpacing());
-
 
   using IteratorType = itk::ImageRegionIterator<TOutputImage> ;
   IteratorType it1(tmp, tmp->GetLargestPossibleRegion());
@@ -359,7 +344,6 @@ SegmentLiverFilter<TInputImage, TOutputImage>
   
   itkDebugMacro("GenerateData End");
 }//end GenerateData
-
 
 /*
 *GetBoundarySize
@@ -411,7 +395,6 @@ typename TOutputImage::PointType SegmentLiverFilter<TInputImage, TOutputImage>::
 	return boundarySize;
 }//end GetBoundarySize
 
-
 /*
 *GetBoundarySize
 *	Returns a physical point that represents the lowest coordinate of the box around the region that makes up the seed.  Cannot be run before data is generated.
@@ -448,10 +431,6 @@ typename TOutputImage::PointType SegmentLiverFilter<TInputImage, TOutputImage>::
 	}
 	return boundaryStart;
 }//end GetBoundaryStart
-
-
-
-
 
 /* When printed, it will show the midpoint and all 3 vectors. */
 template <class TInputImage, class TOutputImage>

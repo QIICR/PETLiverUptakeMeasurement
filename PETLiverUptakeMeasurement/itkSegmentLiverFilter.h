@@ -15,7 +15,7 @@
  
  ==============================================================================*/
  
- /**
+/**
 \file itkSegmentLiverFilter.h
 \brief Class definition for segmenting the liver of a PET scan image of a certain orientation.
 */
@@ -29,13 +29,8 @@
 *Makes a sphere of the specified radius at that location.  The sphere has value 1.  All other pixels have value 0.
 *Also identifies a physical bounding box around the centroid to contain the whole segmentation.
 */
-
-
-
-
 #ifndef __itkSegmentLiverFilter_h
 #define __itkSegmentLiverFilter_h
-
 
 #include "itkLinearInterpolateImageFunction.h"
 #include "itkNearestNeighborInterpolateImageFunction.h"
@@ -44,9 +39,6 @@
 #include "itkImageToImageFilter.h"
 #include "itkBinaryBallStructuringElement.h"
 #include "itkBinaryErodeImageFilter.h"
-
-//#include "itkIsolatedConnectedImageFilter.h"
-
 
 namespace itk
 {
@@ -71,7 +63,6 @@ namespace itk
  *
  * \ingroup SegmentationFilters
  */
-
 
 template <class TInputImage, class TOutputImage>
 class ITK_EXPORT SegmentLiverFilter : public ImageToImageFilter<TInputImage,TOutputImage>
@@ -103,7 +94,6 @@ public:
   using OutputImagePixelType = typename OutputImageType::PixelType;
 
   using PointType = typename TOutputImage::PointType;
-  
 
   /** ImageDimension enumeration */
   static constexpr unsigned int InputImageDimension = TInputImage::ImageDimension;
@@ -113,39 +103,18 @@ public:
   itkGetMacro(LowerThreshold, InputImagePixelType);
   itkSetMacro(UpperThreshold, InputImagePixelType);
   itkGetMacro(UpperThreshold, InputImagePixelType);  
-
-
-
-
-  /* Set the lower threshold for segmentation */
-  //void SetLowerThreshold(InputImagePixelType newThresh)	{	m_LowerThreshold = newThresh;	}
-
-  /* Set the upper threshold for segmentation */
-  //void SetUpperThreshold(InputImagePixelType newThresh)	{	m_UpperThreshold = newThresh;	}
-
-  /* Get the lower threshold for segmentation */
-  //InputImagePixelType GetLowerThreshold()	{	return m_LowerThreshold;	}
-
-  /* Get the upper threshold for segmentation */
-  //InputImagePixelType GetUpperThreshoold()	{	return m_LowerThreshold;	}
-
-
-  //itkSetMacro(BrainCentroid, PointType);
-  //itkSetMacro(SectorLocation, PointType);
-  itkGetMacro(BrainCentroid, PointType);
+  
   itkSetMacro(UseBrainCentroid, bool);
     
   /** Set the ROI for the liver region */
-    void SetSearchROI(InputImageRegionType searchROI) {m_SearchROI = searchROI; this->m_SetUseSearchROI=true; };
+  void SetSearchROI(InputImageRegionType searchROI) { m_SearchROI = searchROI; this->m_SetUseSearchROI=true; };
     
   /** Set the physical centroid of the brain */
-  void SetBrainCentroid(PointType newCentroid)	{	m_BrainCentroid = newCentroid;	this->SetUseBrainCentroid(true);	}
+  void SetBrainCentroid(PointType newCentroid)	{	m_BrainCentroid = newCentroid;	this->SetUseBrainCentroid(true); }
+  itkGetMacro(BrainCentroid, PointType);
 
   /** Set the interior corner of the bounding box directly, as a physical coordinate */
   void SetSectorLocation(PointType newLocation)	{	m_SectorLocation = newLocation;	this->SetUseBrainCentroid(false);	}
-
-
-
 
   itkSetMacro(RealSpacing, bool);
   itkSetMacro(SpacingDistance, bool);
@@ -167,15 +136,12 @@ public:
 
   itkGetMacro(Radius, double);
 
-
-  itkSetMacro(MinZFromBrain, double);
   /* Set the minimum Z value below the brain */
-  //void SetMinZFromBrain(double newMinZ)		{	m_MinZFromBrain = newMinZ;	}
+  itkSetMacro(MinZFromBrain, double);
 
-
-  itkSetMacro(MinXFromBrain, double);
   /* Set the minimum X value away from the brain*/
-  //void SetMinXFromBrain(double newMinX)		{	m_MinXFromBrain = newMinX;	}
+  itkSetMacro(MinXFromBrain, double);
+  
   /** Input and output images must be the same dimension, or the output's
       dimension must be one less than that of the input. */
 #ifdef ITK_USE_CONCEPT_CHECKING

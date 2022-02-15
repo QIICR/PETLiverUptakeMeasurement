@@ -15,7 +15,7 @@
  
  ==============================================================================*/
  
- /**
+/**
 \file 	itkSegmentBrainFilter.txx
 \brief	Implementation of itkSegmentBrainFilter.h.
 */
@@ -26,13 +26,14 @@
 *Programmer: Markus Van Tol
 *Date: 8/18/11
 *
-*
 */
-
 
 #ifndef __itkSegmentBrainFilter_txx
 #define __itkSegmentBrainFilter_txx
 
+#include <cmath>
+#include <string>
+#include <iostream>
 #include "itkSegmentBrainFilter.h"
 #include "itkImageRegionIteratorWithIndex.h"
 #include "itkImageRegionIterator.h"
@@ -41,20 +42,8 @@
 #include "itkNearestNeighborInterpolateImageFunction.h"
 #include "itkInterpolateImageFunction.h"
 #include "itkContinuousIndex.h"
-#include <cmath>
-#include <string>
-#include <iostream>
 #include "itkBinaryErodeImageFilter.h"
 #include "itkBinaryBallStructuringElement.h"
-
-//#include <sstream>
-//#include <vnl_generalized_eigensystem.h>
-//#include <vnl/vnl_matrix_fixed.h>
-//#include <vnl/vnl_vector_fixed.h>
-//#include <vnl/vnl_double_3x4.h>
-//#include <vnl/vnl_double_3.h>
-
-
 
 namespace itk
 {
@@ -123,14 +112,7 @@ SegmentBrainFilter<TInputImage, TOutputImage>
     typename TInputImage::RegionType RequestedRegion;
     typename TInputImage::SizeType  inputSize;
     typename TInputImage::IndexType inputIndex;
-    //typename TInputImage::SizeType  inputLargSize;
-    //typename TInputImage::IndexType inputLargIndex;
-    //typename TOutputImage::SizeType  outputSize;
-    //typename TOutputImage::IndexType outputIndex;
 
-
-    //auto outputIndex = this->GetOutput()->GetRequestedRegion().GetIndex();
-    //auto outputSize = this->GetOutput()->GetRequestedRegion().GetSize();
     auto inputLargSize = this->GetInput()->GetLargestPossibleRegion().GetSize();
     auto inputLargIndex = this->GetInput()->GetLargestPossibleRegion().GetIndex();
 
@@ -150,7 +132,6 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   itkDebugMacro("GenerateInputRequestedRegion End");
 }//end GenerateInputRequestedRegion
 
-
 /**
  * GenerateData Performs the diagonal image creation
  */
@@ -159,7 +140,6 @@ void
 SegmentBrainFilter<TInputImage, TOutputImage>
 ::GenerateData( void )
 {
-
   using OutputPixelType = typename TOutputImage::PixelType;
 
   auto inputImage = this->GetInput();
@@ -173,15 +153,13 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   thresholdFilter->SetInput(inputImage);
   thresholdFilter->SetInsideValue(1);
   thresholdFilter->SetOutsideValue(0);
-	//image thresholded
+  //image thresholded
 
-//Need to remove parts below a certain volume
-
+  //Need to remove parts below a certain volume
   using TOutputImage2D = itk::Image<OutputPixelType, 2>;
 
   using HoleFilter = itk::GrayscaleFillholeImageFilter<TOutputImage2D, TOutputImage2D>;
   auto holeFilter = HoleFilter::New();
-
 
   using SbSFilterType = itk::SliceBySliceImageFilter<TOutputImage, TOutputImage, HoleFilter, HoleFilter, TOutputImage2D, TOutputImage2D>;
   auto sbsFilter = SbSFilterType::New();
@@ -189,31 +167,12 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   sbsFilter->SetFilter(holeFilter);
   sbsFilter->SetInput(thresholdFilter->GetOutput());
 
-
-
   using ComponentFilter = itk::ConnectedComponentImageFilter<TOutputImage, TOutputImage>;
   auto componentFilter = ComponentFilter::New();
   componentFilter->SetInput(sbsFilter->GetOutput());
   componentFilter->SetBackgroundValue( 0 );
 
   componentFilter->Update();
-  
-
-  /*typedef typename itk::BinaryBallStructuringElement<OutputImagePixelType, 3 > StructuringElementType;
-  //typename StructuringElementType::Pointer SE = StructuringElementType::New();
-  StructuringElementType SE;
-  SE.SetRadius(2);
-
-  typedef typename itk::BinaryErodeImageFilter< OutputImageType, OutputImageType, StructuringElementType> ErodeImageFilterType;
-  typename ErodeImageFilterType::Pointer eroder = ErodeImageFilterType::New();
-  eroder->SetKernel( SE );
-  eroder->SetErodeValue( 1 );
-  //eroder->SetForegroundValue( 1 );
-  //eroder->SetBackgroundValue( 0 );
-  eroder->SetInput( componentFilter->GetOutput() );
-  eroder->Update(); */
-
-
   auto filteredImage = componentFilter->GetOutput();
 
   using IteratorType = itk::ImageRegionIterator<TOutputImage> ;
@@ -222,13 +181,10 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   it1.GoToBegin();	it2.GoToBegin();
   while (!it1.IsAtEnd())
   {	it2.Set(it1.Get());	++it1;	++it2;	}
-  
 
-  FindCentroid(outputImage);//eroder->GetOutput());
+  FindCentroid(outputImage);
 
 }//end GenerateData
-
-
 
 /*
 *FindCentroid
@@ -239,7 +195,6 @@ template <class TInputImage, class TOutputImage>
 void SegmentBrainFilter<TInputImage, TOutputImage>::
 FindCentroid(OutputImagePointer outputImage)
 {	
-
 	//go to highest slice and find pixel value for the brain
 	//
 	//while slices contain that pixel value, keep going down
@@ -318,7 +273,6 @@ FindCentroid(OutputImagePointer outputImage)
 				++it1;
 			}//end while
 			//std::cout<<"voxelCount="<<voxelCount<<std::endl;
-			//if (m_Verbose)	std::cout << "voxelCount == " << voxelCount << std::endl;
 			centroid[0] /= (double) voxelCount;
 			centroid[1] /= (double) voxelCount;
 			centroid[2] /= (double) voxelCount;
@@ -438,28 +392,20 @@ MinimumVolume(OutputImagePixelType label, OutputImagePointer image)
 	}
 	//std::cout<<"Label "<<label<<" volume = "<<voxelCount*spacePerVoxel<<std::endl;
 	return (voxelCount * spacePerVoxel >= m_MinimumVolume);
-
-
-}
-
-
-
-
+	}
 
 /* When printed, it will show the midpoint and all 3 vectors. */
 template <class TInputImage, class TOutputImage>
 void SegmentBrainFilter<TInputImage, TOutputImage>::
 PrintSelf(std::ostream& os, Indent indent) const
 {
-  Superclass::PrintSelf(os,indent);
+	Superclass::PrintSelf(os,indent);
 
- /* os << indent << "Midpoint: (" << ReferencePoint[0] << ',' << ReferencePoint[1] << ',' << ReferencePoint[2] << ')' << std::endl;
-  os << indent << "X Vector: <" << XVector[0] << ',' << XVector[1] << ',' << XVector[2] << '>' << std::endl;
-  os << indent << "Y Vector: <" << YVector[0] << ',' << YVector[1] << ',' << YVector[2] << '>' << std::endl;
-  os << indent << "Z Vector: <" << ZVector[0] << ',' << ZVector[1] << ',' << ZVector[2] << '>' << std::endl;*/
+	os << indent << "Centeroid: (" << m_Centroid[0] << ',' << m_Centroid[1] << ',' << m_Centroid[2] << ')' << std::endl;
+	os << indent << "Bounding Box start: (" << m_BoundaryStart[0] << ',' << m_BoundaryStart[1] << ',' << m_BoundaryStart[2] << ')' << std::endl;
+	os << indent << "Bounding Box size: (" << m_BoundaryStart[0] << ',' << m_BoundaryStart[1] << ',' << m_BoundaryStart[2] << ')' << std::endl;
 }//end PrintSelf
 
 } // end namespace itk
-
 
 #endif
