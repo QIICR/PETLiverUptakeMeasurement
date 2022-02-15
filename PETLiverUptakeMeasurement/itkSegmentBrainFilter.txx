@@ -67,18 +67,14 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   itkDebugMacro("GenerateOutputInformation Start");
 
   typename TOutputImage::RegionType outputRegion;
-  typename TInputImage::IndexType inputIndex;
-  typename TInputImage::SizeType  inputSize;
   typename TOutputImage::SizeType  outputSize;
   typename TOutputImage::IndexType outputIndex;
-  typename TInputImage::SpacingType inSpacing;
-  typename TInputImage::PointType inOrigin;
   typename TOutputImage::SpacingType outSpacing;
   typename TOutputImage::PointType outOrigin;
 
   // Get pointers to the input and output
-  typename Superclass::OutputImagePointer output = this->GetOutput();
-  typename Superclass::InputImagePointer input = const_cast< TInputImage * >( this->GetInput() );
+  auto output = this->GetOutput();
+  auto input = const_cast< TInputImage * >( this->GetInput() );
   
   if( !input || !output )
     {
@@ -89,10 +85,10 @@ SegmentBrainFilter<TInputImage, TOutputImage>
     return;
     }
  
-  inputIndex = input->GetLargestPossibleRegion().GetIndex();
-  inputSize = input->GetLargestPossibleRegion().GetSize();
-  inSpacing = input->GetSpacing();
-  inOrigin = input->GetOrigin();
+  auto inputIndex = input->GetLargestPossibleRegion().GetIndex();
+  auto inputSize = input->GetLargestPossibleRegion().GetSize();
+  auto inSpacing = input->GetSpacing();
+  auto inOrigin = input->GetOrigin();
 
   // Set the LargestPossibleRegion of the output.
   for(unsigned int i = 0; i<InputImageDimension; i++)
@@ -127,16 +123,16 @@ SegmentBrainFilter<TInputImage, TOutputImage>
     typename TInputImage::RegionType RequestedRegion;
     typename TInputImage::SizeType  inputSize;
     typename TInputImage::IndexType inputIndex;
-    typename TInputImage::SizeType  inputLargSize;
-    typename TInputImage::IndexType inputLargIndex;
-    typename TOutputImage::SizeType  outputSize;
-    typename TOutputImage::IndexType outputIndex;
+    //typename TInputImage::SizeType  inputLargSize;
+    //typename TInputImage::IndexType inputLargIndex;
+    //typename TOutputImage::SizeType  outputSize;
+    //typename TOutputImage::IndexType outputIndex;
 
 
-    outputIndex = this->GetOutput()->GetRequestedRegion().GetIndex();
-    outputSize = this->GetOutput()->GetRequestedRegion().GetSize();
-    inputLargSize = this->GetInput()->GetLargestPossibleRegion().GetSize();
-    inputLargIndex = this->GetInput()->GetLargestPossibleRegion().GetIndex();
+    //auto outputIndex = this->GetOutput()->GetRequestedRegion().GetIndex();
+    //auto outputSize = this->GetOutput()->GetRequestedRegion().GetSize();
+    auto inputLargSize = this->GetInput()->GetLargestPossibleRegion().GetSize();
+    auto inputLargIndex = this->GetInput()->GetLargestPossibleRegion().GetIndex();
 
     for(unsigned int i=0; i<TInputImage::ImageDimension; i++)
       {
@@ -166,13 +162,13 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 
   using OutputPixelType = typename TOutputImage::PixelType;
 
-  typename Superclass::InputImageConstPointer  inputImage = this->GetInput();
-  typename TOutputImage::Pointer outputImage = this->GetOutput();
+  auto inputImage = this->GetInput();
+  auto outputImage = this->GetOutput();
   outputImage->SetBufferedRegion( outputImage->GetRequestedRegion() );
   outputImage->Allocate();
 
   using ThresholdFilter = itk::BinaryThresholdImageFilter<TInputImage, TOutputImage>;
-  typename ThresholdFilter::Pointer thresholdFilter = ThresholdFilter::New();
+  auto thresholdFilter = ThresholdFilter::New();
   thresholdFilter->SetLowerThreshold(m_LowerThreshold);
   thresholdFilter->SetInput(inputImage);
   thresholdFilter->SetInsideValue(1);
@@ -184,11 +180,11 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   using TOutputImage2D = itk::Image<OutputPixelType, 2>;
 
   using HoleFilter = itk::GrayscaleFillholeImageFilter<TOutputImage2D, TOutputImage2D>;
-  typename HoleFilter::Pointer holeFilter = HoleFilter::New();
+  auto holeFilter = HoleFilter::New();
 
 
   using SbSFilterType = itk::SliceBySliceImageFilter<TOutputImage, TOutputImage, HoleFilter, HoleFilter, TOutputImage2D, TOutputImage2D>;
-  typename SbSFilterType::Pointer sbsFilter = SbSFilterType::New();
+  auto sbsFilter = SbSFilterType::New();
 
   sbsFilter->SetFilter(holeFilter);
   sbsFilter->SetInput(thresholdFilter->GetOutput());
@@ -196,7 +192,7 @@ SegmentBrainFilter<TInputImage, TOutputImage>
 
 
   using ComponentFilter = itk::ConnectedComponentImageFilter<TOutputImage, TOutputImage>;
-  typename ComponentFilter::Pointer componentFilter = ComponentFilter::New();
+  auto componentFilter = ComponentFilter::New();
   componentFilter->SetInput(sbsFilter->GetOutput());
   componentFilter->SetBackgroundValue( 0 );
 
@@ -218,7 +214,7 @@ SegmentBrainFilter<TInputImage, TOutputImage>
   eroder->Update(); */
 
 
-  typename TOutputImage::Pointer filteredImage = componentFilter->GetOutput();
+  auto filteredImage = componentFilter->GetOutput();
 
   using IteratorType = itk::ImageRegionIterator<TOutputImage> ;
   IteratorType it1(filteredImage, filteredImage->GetLargestPossibleRegion());

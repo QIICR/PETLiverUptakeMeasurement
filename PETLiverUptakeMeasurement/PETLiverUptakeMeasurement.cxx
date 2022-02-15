@@ -44,7 +44,7 @@ int getLiverRegionWithROI( int argc, char * argv[], InputImageType::Pointer petS
     PARSE_ARGS;
     
     using SegmentLiverFilterType = itk::SegmentLiverFilter<InputImageType, OutputImageType>;
-    SegmentLiverFilterType::Pointer segmentLiver = SegmentLiverFilterType::New();
+    auto segmentLiver = SegmentLiverFilterType::New();
     segmentLiver->SetInput(petScan);
     segmentLiver->SetLowerThreshold(lowerThreshold);
     segmentLiver->SetUpperThreshold(upperThreshold);
@@ -61,12 +61,12 @@ int getLiverRegionWithROI( int argc, char * argv[], InputImageType::Pointer petS
         const double minimumVolume = 1000.0;
         using BrainOutputImageType = itk::Image<long, 3>;
         using SegmentBrainFilterType = itk::SegmentBrainFilter<InputImageType, BrainOutputImageType>;
-        SegmentBrainFilterType::Pointer segmentBrain = SegmentBrainFilterType::New();
+        auto segmentBrain = SegmentBrainFilterType::New();
         segmentBrain->SetInput(petScan);
         segmentBrain->SetLowerThreshold(threshold);
         segmentBrain->SetMinimumVolume(minimumVolume);
         segmentBrain->Update();
-        SegmentBrainFilterType::PointType brainCentroid = segmentBrain->GetCentroid();
+        auto brainCentroid = segmentBrain->GetCentroid();
         
         // specify ROI based on brain center
         const double minX = 20.0;
@@ -129,25 +129,24 @@ int main( int argc, char * argv[] )
         using OutputPixelType = unsigned char;
         using InputImageType = itk::Image<InputPixelType, 3>;
         using OutputImageType = itk::Image<OutputPixelType, 3>;
-        using ROIType = InputImageType::RegionType;
         
         // read pet scan
         using ReaderType = itk::ImageFileReader<InputImageType> ;
-        ReaderType::Pointer reader = ReaderType::New();
+        auto reader = ReaderType::New();
         reader->SetFileName( inputVolume.c_str() );
         reader->Update();
-        InputImageType::Pointer petScan = reader->GetOutput();
+        auto petScan = reader->GetOutput();
         
         // identify liver reference region
-        ROIType liverSearchROI = convertToROI(region, petScan);
-        OutputImageType::Pointer liverRegion = OutputImageType::New();
+        auto liverSearchROI = convertToROI(region, petScan);
+        auto liverRegion = OutputImageType::New();
         getLiverRegionWithROI(argc, argv, petScan, liverRegion, liverSearchROI);
         
         // write segmentation result, if requested
         if (outputVolume.size()>0)
         {
           using WriterType = itk::ImageFileWriter<OutputImageType>;
-          WriterType::Pointer writer = WriterType::New();
+          auto writer = WriterType::New();
           writer->SetFileName( outputVolume.c_str() );
           writer->SetInput( liverRegion );
           writer->SetUseCompression(1);
@@ -156,7 +155,7 @@ int main( int argc, char * argv[] )
         
         // obtain measurements
         using StatsFilterType = itk::LabelStatisticsImageFilter<InputImageType, OutputImageType>;
-        StatsFilterType::Pointer stats = StatsFilterType::New();
+        auto stats = StatsFilterType::New();
         stats->SetInput(petScan);
         stats->SetLabelInput(liverRegion);
         stats->UseHistogramsOn(); // required to calculate median value
