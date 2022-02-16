@@ -124,7 +124,7 @@ public:
 protected:
   SegmentBrainFilter() = default;
   ~SegmentBrainFilter() override = default;
-  void PrintSelf(std::ostream& os, Indent indent) const;
+  void PrintSelf(std::ostream& os, Indent indent) const override;
 
   /** Apply changes to the output image information. */
   void GenerateOutputInformation() override;
