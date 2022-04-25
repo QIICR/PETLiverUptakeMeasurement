@@ -90,7 +90,7 @@ class PETLiverUptakeMeasurementQRWidget(ScriptedLoadableModuleWidget):
     parametersFormLayout.addRow("Output Volume", self.segmentationSelector)
 
     self.regionSelector = slicer.qMRMLNodeComboBox()
-    self.regionSelector.nodeTypes = ["vtkMRMLAnnotationROINode"]
+    self.regionSelector.nodeTypes = ["vtkMRMLAnnotationROINode",'vtkMRMLMarkupsROINode']
     self.regionSelector.selectNodeUponCreation = True
     self.regionSelector.addEnabled = True
     self.regionSelector.removeEnabled = True
